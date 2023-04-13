@@ -53,6 +53,104 @@ class ClockPainter extends CustomPainter {
   //60sec - 360, 1 sec - 6degrees
   //60min - 360, 1 min - 6degrees
   //12hours - 360, 1 hour - 30degrees, 60min - 30degrees, 1 min - 0.5degrees
+  double getStartAngle(int hour) {
+    if (hour >= 1 && hour < 5) {
+      return pi / 6; // Wood - Green
+    } else if (hour >= 5 && hour < 9) {
+      return 0; // Metal - Grey
+    } else if (hour >= 9 && hour < 13) {
+      return -pi / 6; // Earth - Orange
+    } else if (hour >= 13 && hour < 17) {
+      return -pi / 2; // Fire - Red
+    } else if (hour >= 17 && hour < 21) {
+      return -2 * pi / 3; // Water - Blue
+    } else {
+      return -5 * pi / 6; // Lightning - Magenta
+    }
+  }
+
+  void drawInnerColoredArcs(Canvas canvas, Offset center, double radius) {
+    double arcAngle = 2 * pi / 6;
+    List<Color> colors = [
+      Colors.grey,
+      Colors.orange,
+      Colors.red,
+      Colors.blue,
+      Colors.purple,
+      Colors.green,
+    ];
+
+    int hour = dateTime.hour;
+    double startAngle = getStartAngle(hour);
+
+    bool isAM = hour >= 1 && hour < 13;
+    double innerRadius;
+    double strokeWidth = radius * 0.15;
+
+    for (int i = 0; i < 6; i++) {
+      innerRadius = isAM ? radius * 0.5 : radius * 0.65;
+
+      var arcPaint = Paint()
+        ..color = colors[i]
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: innerRadius + strokeWidth / 2),
+        startAngle + i * arcAngle,
+        arcAngle,
+        false,
+        arcPaint,
+      );
+    }
+
+    for (int i = 0; i < 6; i++) {
+      innerRadius = !isAM ? radius * 0.5 : radius * 0.65;
+
+      var arcPaint = Paint()
+        ..color = colors[i].withOpacity(!isAM ? 0.4 : 1)
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = strokeWidth
+        ..strokeCap = StrokeCap.round;
+
+      canvas.drawArc(
+        Rect.fromCircle(center: center, radius: innerRadius + strokeWidth / 2),
+        startAngle + i * arcAngle,
+        arcAngle,
+        false,
+        arcPaint,
+      );
+    }
+  }
+
+  void drawColoredSectors(Canvas canvas, Offset center, double radius) {
+    var sectorPaint1 = Paint()..color = Colors.red.withOpacity(0.3);
+    var sectorPaint2 = Paint()..color = Colors.green.withOpacity(0.3);
+    var sectorPaint3 = Paint()..color = Colors.blue.withOpacity(0.3);
+
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius * 0.75),
+      0,
+      2 * pi / 3,
+      true,
+      sectorPaint1,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius * 0.75),
+      2 * pi / 3,
+      2 * pi / 3,
+      true,
+      sectorPaint2,
+    );
+    canvas.drawArc(
+      Rect.fromCircle(center: center, radius: radius * 0.75),
+      4 * pi / 3,
+      2 * pi / 3,
+      true,
+      sectorPaint3,
+    );
+  }
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -75,15 +173,19 @@ class ClockPainter extends CustomPainter {
       ..strokeWidth = size.width / 60;
 
     var minHandBrush = Paint()
-      ..shader = RadialGradient(colors: [CustomColors.minHandStatColor, CustomColors.minHandEndColor])
-          .createShader(Rect.fromCircle(center: center, radius: radius))
+      ..shader = RadialGradient(colors: [
+        CustomColors.minHandStatColor,
+        CustomColors.minHandEndColor
+      ]).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = size.width / 30;
 
     var hourHandBrush = Paint()
-      ..shader = RadialGradient(colors: [CustomColors.hourHandStatColor, CustomColors.hourHandEndColor])
-          .createShader(Rect.fromCircle(center: center, radius: radius))
+      ..shader = RadialGradient(colors: [
+        CustomColors.hourHandStatColor,
+        CustomColors.hourHandEndColor
+      ]).createShader(Rect.fromCircle(center: center, radius: radius))
       ..style = PaintingStyle.stroke
       ..strokeCap = StrokeCap.round
       ..strokeWidth = size.width / 24;
@@ -96,8 +198,14 @@ class ClockPainter extends CustomPainter {
     canvas.drawCircle(center, radius * 0.75, fillBrush);
     canvas.drawCircle(center, radius * 0.75, outlineBrush);
 
-    var hourHandX = centerX + radius * 0.4 * cos((dateTime.hour * 30 + dateTime.minute * 0.5) * pi / 180);
-    var hourHandY = centerY + radius * 0.4 * sin((dateTime.hour * 30 + dateTime.minute * 0.5) * pi / 180);
+    var hourHandX = centerX +
+        radius *
+            0.4 *
+            cos((dateTime.hour * 30 + dateTime.minute * 0.5) * pi / 180);
+    var hourHandY = centerY +
+        radius *
+            0.4 *
+            sin((dateTime.hour * 30 + dateTime.minute * 0.5) * pi / 180);
     canvas.drawLine(center, Offset(hourHandX, hourHandY), hourHandBrush);
 
     var minHandX = centerX + radius * 0.6 * cos(dateTime.minute * 6 * pi / 180);
@@ -120,6 +228,8 @@ class ClockPainter extends CustomPainter {
       var y2 = centerY + innerRadius * sin(i * pi / 180);
       canvas.drawLine(Offset(x1, y1), Offset(x2, y2), dashBrush);
     }
+    drawInnerColoredArcs(canvas, center, radius);
+    //  drawColoredSectors(canvas, center, radius * 0.75);
   }
 
   @override
